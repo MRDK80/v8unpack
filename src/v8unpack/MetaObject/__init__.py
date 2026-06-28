@@ -8,6 +8,19 @@ from .. import helper
 from ..ext_exception import ExtException
 from ..metadata_types import MetaDataTypes
 
+# Таблица каноничных имён каталогов по контексту родителя.
+# Ключ: (класс_родителя, raw_name из enum). Значение: имя каталога при decode/encode.
+_CANONICAL_TYPE_NAME = {
+    ('DataProcessor', 'Form'): 'DataProcessorForm',
+}
+
+
+def _get_canonical_type_name(parent_class_name, metadata_type_name):
+    """Возвращает каноническое имя каталога для пары (родитель, тип).
+    Если переопределения нет — возвращает metadata_type_name без изменений.
+    """
+    return _CANONICAL_TYPE_NAME.get((parent_class_name, metadata_type_name), metadata_type_name)
+
 
 class MetaObject:
     ext_code = {'obj': 0}
@@ -95,27 +108,28 @@ class MetaObject:
                 # raise Exception(msg)
             if not _count_obj:
                 continue
-            new_dest_path = os.path.join(dest_path, metadata_type.name)
+            type_name = _get_canonical_type_name(self.__class__.__name__, metadata_type.name)
+            new_dest_path = os.path.join(dest_path, type_name)
             external_obj = False
             internal_obj = False
             for j in range(_count_obj):
                 obj_data = _metadata[j + 2]
                 if isinstance(obj_data, str):
                     if j == 0:
-                        os.mkdir(os.path.join(dest_dir, new_dest_path))
+                        os.makedirs(os.path.join(dest_dir, new_dest_path), exist_ok=True)
 
-                    tasks.append([metadata_type.name,
+                    tasks.append([type_name,
                                   [src_dir, obj_data, dest_dir, new_dest_path, self.container_uuid, self.options]])
                     external_obj = True
                 elif isinstance(obj_data, list):
                     if not metadata_type:
                         continue
                     try:
-                        handler = helper.get_class_metadata_object(metadata_type.name)
+                        handler = helper.get_class_metadata_object(type_name)
                     except Exception as err:
                         continue
                     if j == 0:
-                        os.mkdir(os.path.join(dest_dir, new_dest_path))
+                        os.makedirs(os.path.join(dest_dir, new_dest_path), exist_ok=True)
                     obj_uuid = handler.decode_internal_include(self, obj_data, src_dir, dest_dir, new_dest_path,
                                                                self.options)
                     if not auto_include:
@@ -123,7 +137,8 @@ class MetaObject:
                         _metadata[j + 2] = obj_uuid
                     internal_obj = True
             if (external_obj or internal_obj) and auto_include:  # todo dynamic index
-                include[i + 3] = metadata_type.name
+                # записываем каноническое имя, чтобы encode нашёл ключ в include_index
+                include[i + 3] = type_name
 
     @classmethod
     def get_decode_includes(cls, header_data: list) -> list:
@@ -168,7 +183,9 @@ class MetaObject:
                     metadata_type = MetaDataTypes(_metadata_type_uuid)
                 except ValueError:
                     return
-                internal_data = include_index.get(metadata_type.name)
+                # ищем по каноническому имени: для DataProcessor + Form это 'DataProcessorForm'
+                type_name = _get_canonical_type_name(self.__class__.__name__, metadata_type.name)
+                internal_data = include_index.get(type_name)
                 if not internal_data:
                     return
                 # данные простых объектов пришли из внешних файлов и нужно поместить из в объект
@@ -183,7 +200,7 @@ class MetaObject:
                         index = internal_data_uuid[obj_uuid.lower()]
                     except KeyError:
                         raise ExtException(message='Не найдены данные внутреннего типа',
-                                           detail=f"{metadata_type.name} {obj_uuid}")
+                                           detail=f"{type_name} {obj_uuid}")
                     _metadata[j + 2] = internal_data[index][2]
         except Exception as err:
             raise ExtException(parent=err)
@@ -219,16 +236,6 @@ class MetaObject:
         # cls.encode_get_include_obj_from_named_folder(src_dir, dest_dir, include, tasks, options, parent_id,
         #                                              include_index)
 
-    # @classmethod
-    # def encode_get_include_obj(cls, src_dir, dest_dir, include, tasks, options, parent_id, include_index):
-    #     """
-    #     возвращает список задач на парсинг объектов этого типа
-    #     """
-    #     entries = os.listdir(src_dir)
-    #     for entry in entries:
-    #         if cls.re_meta_data_obj.fullmatch(entry):
-    #             tasks.append([include, [src_dir, entry[:-5], dest_dir, options, parent_id, include_index]])
-
     @classmethod
     def encode_versions(cls, file_list):
         versions = ["1", str(len(file_list) + 1), helper.str_encode(""), str(uuid4())]
@@ -237,27 +244,11 @@ class MetaObject:
             versions.append(str(uuid4()))
         return [versions]
 
-    # @classmethod
-    # def encode_get_include_obj_from_named_folder(cls, src_dir, dest_dir, include, tasks, options, parent_id,
-    #                                              include_index):
-    #     """
-    #     возвращает список задач на парсинг объектов этого типа
-    #     """
-    #     entries = os.listdir(src_dir)
-    #     for entry in entries:
-    #         if os.path.isdir(os.path.join(src_dir, entry)):
-    #             new_src_dir = os.path.join(src_dir, entry)
-    #             tasks.append([include, [new_src_dir, entry, dest_dir, options, parent_id, include_index]])
-
     def encode_version(self):
         return self.data['file_version']
 
     def get_class_name_without_version(self):
         return self.__class__.__name__
-        # _version = version if version else cls.version
-        # if _version and cls.__name__.endswith(_version):
-        #     return cls.__name__[:len(_version) * -1]
-        # return cls.__name__
 
     def read_raw_code(self, src_dir, file_name, *, uncomment_directive=False):
         encoding = 'utf-8'
@@ -275,14 +266,12 @@ class MetaObject:
                 code = helper.bin_read(src_dir, file_name)
 
         if code and encoding != 'bin':
-            # if self.options['version'] in ['801', '802'] or uncomment_directive:  # раскомментируем директивы
             if uncomment_directive:  # раскомментируем директивы
                 code = self.directive_1c_comment.sub(r'\g<n>\g<d>', code)
         return code, encoding
 
     def write_raw_code(self, code, dest_dir, filename, *, encoding='uft-8', comment_directive=False):
         if code is not None:
-            # if self.options['version'] in ['801', '802'] or comment_directive:  # комментируем директивы
             if comment_directive:  # комментируем директивы
                 code = self.directive_1c_uncomment.sub(r'\g<n>// v8unpack \g<d>', code)
             helper.txt_write(code, dest_dir, filename, encoding=encoding)
@@ -299,9 +288,8 @@ class MetaObject:
                 try:
                     self.code[code_name], encoding = self.read_raw_code(_obj_code_dir, 'text',
                                                                         uncomment_directive=uncomment_directive)
-                    self.header[f'code_encoding_{code_name}'] = encoding  # можно безболезненно поменять на utf-8-sig
+                    self.header[f'code_encoding_{code_name}'] = encoding
                 except FileNotFoundError as err:
-                    # todo могут быть зашифрованные модули тогда файл будет # image.json - зашифрованный контент
                     not_encrypted = True
                     for encrypted_type in self.encrypted_types:
                         if os.path.isfile(os.path.join(_obj_code_dir, encrypted_type)):
@@ -315,9 +303,8 @@ class MetaObject:
                 code_file_name = f'{self.header["uuid"]}.{self.ext_code[code_name]}'
                 self.code[code_name], encoding = self.read_raw_code(src_dir, code_file_name,
                                                                     uncomment_directive=uncomment_directive)
-
                 self.header[f'code_info_{code_name}'] = 'file'
-                self.header[f'code_encoding_{code_name}'] = encoding  # можно безболезненно поменять на utf-8-sig
+                self.header[f'code_encoding_{code_name}'] = encoding
 
     def write_decode_code(self, dest_dir, file_name):
         for code_name in self.code:
@@ -370,7 +357,6 @@ class MetaObject:
         if not product_version:
             return
         header = self.get_decode_header(self.header['header'])
-
         comment = helper.str_decode(header[4])
         version_index = comment.find('ver:')
         if version_index >= 0 and self.options.get('product_version'):
@@ -457,7 +443,6 @@ class MetaObject:
                 try:
                     data = helper.brace_file_read(src_dir, f'{self.header["uuid"]}.{self._obj_info[elem]}')
                     helper.json_write(data, dest_dir, f'{dest_file_name}.{self._obj_info[elem]}.json')
-
                 except FileNotFoundError:
                     pass
 

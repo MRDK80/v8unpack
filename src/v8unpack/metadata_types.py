@@ -80,14 +80,15 @@ class MetaDataTypes(Enum):
     FilterCriterionCommand = "23fa3b84-220a-40e9-8331-e588bed87f7d"
     FilterCriterionForm = '00867c40-06b1-11d6-a3c7-0050bae0a776'  # Критерии отбора Form
     Form = 'd5b0e5ed-256d-401c-9c36-f630cafd8a62'  # Форма внешней обработки
-    FormAttribute = 'ec6bb5e5-b7a8-4d75-bec9-658107a699cf'  # Атрибут Внешней обработки
+    DataProcessorForm = 'd5b0e5ed-256d-401c-9c36-f630cafd8a62'  # алиас Form: каноническое имя формы внутренней обработки
+    FormAttribute = 'ec6bb5e5-b7a8-4d75-bec9-658107a699fc'  # Атрибут Внешней обработки
     FunctionalOption = 'af547940-3268-434f-a3e7-e47d6d2638c3'  # Функциональные опции
     FunctionalOptionsParameter = '30d554db-541e-4f62-8970-a1c6dcfeb2bc'  # Параметры функциональных опций
     HTTPService = '0fffc09c-8f4c-47cc-b41c-8d5c5a221d79'  # HTTPСервис
     InformationRegister = '13134201-f60b-11d5-a3c7-0050bae0a776'  # Регистры сведений
     InformationRegisterCommand = 'b44ba719-945c-445c-8aab-1088fa4df16e'
     InformationRegisterForm = '13134204-f60b-11d5-a3c7-0050bae0a776'  # Form регистра сведений
-    IntegrationService = 'bf3420b0-f6f9-41a0-b83a-fe9d4ab0b65d'#e3403acd-1c95 -421b-87e4-4dfa29d38b52'  # Сервис интеграции
+    IntegrationService = 'bf3420b0-f6f9-41a0-b83a-fe9d4ab0b65d'  # Сервис интеграции
     Interface = '39bddf6a-0c3c-452b-921c-d99cfa1c2f1b'  # Интерфейсы
     Language = '9cd510ce-abfc-11d4-9434-004095e12fc7'  # Языки
     Report = '631b75a0-29e2-11d6-a3c7-0050bae0a776'  # Отчеты
@@ -110,8 +111,3 @@ class MetaDataTypes(Enum):
     WebService = '8657032e-7740-4e1d-a3ba-5dd6e8afb78f'  # Веб-сервис
     WSReference = 'd26096fb-7a5d-4df9-af63-47d04771fa9b'  # WS-ссылки
     XDTOPackage = 'cc9df798-7c94-4616-97d2-7aa0b7bc515e'  # ПакетXDTO
-
-
-
-
-
