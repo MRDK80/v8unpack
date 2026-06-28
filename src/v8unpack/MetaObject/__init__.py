@@ -8,6 +8,12 @@ from .. import helper
 from ..ext_exception import ExtException
 from ..metadata_types import MetaDataTypes
 
+# Таблица каноничных имён каталогов по контексту родителя.
+# Ключ: (класс_родителя, raw_name из enum). Значение: имя каталога при decode.
+_CANONICAL_TYPE_NAME = {
+    ('DataProcessor', 'Form'): 'DataProcessorForm',
+}
+
 
 class MetaObject:
     ext_code = {'obj': 0}
@@ -95,27 +101,30 @@ class MetaObject:
                 # raise Exception(msg)
             if not _count_obj:
                 continue
-            new_dest_path = os.path.join(dest_path, metadata_type.name)
+            type_name = _CANONICAL_TYPE_NAME.get(
+                (self.__class__.__name__, metadata_type.name), metadata_type.name
+            )
+            new_dest_path = os.path.join(dest_path, type_name)
             external_obj = False
             internal_obj = False
             for j in range(_count_obj):
                 obj_data = _metadata[j + 2]
                 if isinstance(obj_data, str):
                     if j == 0:
-                        os.mkdir(os.path.join(dest_dir, new_dest_path))
+                        os.makedirs(os.path.join(dest_dir, new_dest_path), exist_ok=True)
 
-                    tasks.append([metadata_type.name,
+                    tasks.append([type_name,
                                   [src_dir, obj_data, dest_dir, new_dest_path, self.container_uuid, self.options]])
                     external_obj = True
                 elif isinstance(obj_data, list):
                     if not metadata_type:
                         continue
                     try:
-                        handler = helper.get_class_metadata_object(metadata_type.name)
+                        handler = helper.get_class_metadata_object(type_name)
                     except Exception as err:
                         continue
                     if j == 0:
-                        os.mkdir(os.path.join(dest_dir, new_dest_path))
+                        os.makedirs(os.path.join(dest_dir, new_dest_path), exist_ok=True)
                     obj_uuid = handler.decode_internal_include(self, obj_data, src_dir, dest_dir, new_dest_path,
                                                                self.options)
                     if not auto_include:

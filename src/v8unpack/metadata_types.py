@@ -80,6 +80,7 @@ class MetaDataTypes(Enum):
     FilterCriterionCommand = "23fa3b84-220a-40e9-8331-e588bed87f7d"
     FilterCriterionForm = '00867c40-06b1-11d6-a3c7-0050bae0a776'  # Критерии отбора Form
     Form = 'd5b0e5ed-256d-401c-9c36-f630cafd8a62'  # Форма внешней обработки
+    DataProcessorForm = 'd5b0e5ed-256d-401c-9c36-f630cafd8a62'  # алиас Form: каноническое имя формы внутренней обработки
     FormAttribute = 'ec6bb5e5-b7a8-4d75-bec9-658107a699cf'  # Атрибут Внешней обработки
     FunctionalOption = 'af547940-3268-434f-a3e7-e47d6d2638c3'  # Функциональные опции
     FunctionalOptionsParameter = '30d554db-541e-4f62-8970-a1c6dcfeb2bc'  # Параметры функциональных опций
@@ -92,7 +93,7 @@ class MetaDataTypes(Enum):
     Language = '9cd510ce-abfc-11d4-9434-004095e12fc7'  # Языки
     Report = '631b75a0-29e2-11d6-a3c7-0050bae0a776'  # Отчеты
     ReportCommand = 'e7ff38c0-ec3c-47a0-ae90-20c73ca72246'  # Отчеты
-    ReportForm = 'a3b368c0-29e2-11d6-a3c7-0050bae0a776'  # Отчеты форма
+    ReportForm = 'a3b368c0-29e2-11d6-a3c7-0760ab048f8d'  # Отчеты форма
     Role = '09736b02-9cac-4e3f-b4f7-d3e9576ab948'  # Роли
     ScheduledJob = '11bdaf85-d5ad-4d91-bb24-aa0eee139052'  # Регламентные задания
     Sequences = 'bc587f20-35d9-11d6-a3c7-0050bae0a776'  # Последовательность, 1 ШТ
@@ -110,8 +111,3 @@ class MetaDataTypes(Enum):
     WebService = '8657032e-7740-4e1d-a3ba-5dd6e8afb78f'  # Веб-сервис
     WSReference = 'd26096fb-7a5d-4df9-af63-47d04771fa9b'  # WS-ссылки
     XDTOPackage = 'cc9df798-7c94-4616-97d2-7aa0b7bc515e'  # ПакетXDTO
-
-
-
-
-
